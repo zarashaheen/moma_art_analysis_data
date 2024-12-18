@@ -1,3 +1,4 @@
+from sql_integration import save_to_sql, query_enriched_data, query_acquisition_trends
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -20,14 +21,14 @@ print(on_view.head())
 print("Artworks Columns:", artworks.columns)
 print("Artists Columns:", artists.columns)
 
-# EDIT: fixed error. artworks was int, artists was string, fixed error by converting both to strings
+# EDIT: fixed error. artworks used to be int, artists was string, fixed error by converting both to strings
 artworks["ConstituentID"] = artworks["ConstituentID"].astype(str)
 artists["ConstituentID"] = artists["ConstituentID"].astype(str)
 
 # merge
 merged_data = pd.merge(artworks, artists, on="ConstituentID", how="left")
 
-# print
+# print to see the merged data result
 print("\nMerged Data Overview:")
 print(merged_data.head())
 
@@ -46,3 +47,37 @@ plt.show()
 
 # ending statement to let user know analysis was completed
 print("\nanalysis complete. chart saved as 'top_art_mediums.png'.")
+
+
+# sql
+def load_data():
+    # Use unique names for local variables
+    artworks_local = pd.read_csv("data/Artworks.csv")
+    artists_local = pd.read_csv("data/Artists.csv")
+    return artworks_local, artists_local
+
+
+def main():
+    # loading data
+    artworks_local, artists_local = load_data()
+
+    # sql save
+    conn = save_to_sql(artworks_local, artists_local)
+
+    # visualize
+    enriched_data = query_enriched_data(conn)
+    print("\nEnriched Data Sample:")
+    print(enriched_data)
+
+    # acquisition trends graph (line graph)
+    acquisition_trends = query_acquisition_trends(conn)
+    acquisition_trends.plot(kind="line", x="Year", y="ArtworkCount", title="Artwork Acquisitions Over Time")
+    plt.ylabel("Number of Artworks")
+    plt.show()
+
+    # exit and end
+    conn.close()
+
+
+if __name__ == "__main__":
+    main()
